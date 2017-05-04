@@ -7,11 +7,7 @@ AUTOCOMPLETE_TEMPLATE = """
     local cur opts
     cur="${{COMP_WORDS[COMP_CWORD]}}"
     opts="{}"
-
-    if [[ ${{cur}} == -* ]] ; then
-        COMPREPLY=( $(compgen -W "${{opts}}" -- ${{cur}}) )
-        return 0
-    fi
+    COMPREPLY=( $(compgen -W "${{opts}}" -- ${{cur}}) )
 }}
 complete -F {} {}
 """
@@ -20,7 +16,7 @@ PATH_TO_COMPLETION_DIR = "/etc/bash_completion.d/"
 
 PATH_TO_BASH_PROFILE = "~/.bash_profile"
 
-PATH_TO_COMPLETION_SCRIPT = "/etc/bash_completion.d/complete.sh"
+PATH_TO_COMPLETION_SCRIPT = "/etc/bash_completion.d/_auto_complete"
 
 def require_sudo(function):
 	def wrapper(*args, **kwargs):
@@ -50,7 +46,7 @@ class AutoComplete(object):
 			self.add(command, options)
 
 	def check_command_at_boot():
-		path = os.expanduser('PATH_TO_BASH_PROFILE)
+		path = os.expanduser(PATH_TO_BASH_PROFILE)
 		if not os.path.isfile(path):
 			return False
 		content = ''.join()
@@ -61,11 +57,17 @@ class AutoComplete(object):
 		if not os.path.isdir(PATH_TO_COMPLETION_DIR):
 			call(["sudo", "mkdir", PATH_TO_COMPLETION_DIR])
 
+		# HACK TO GIVE PERMISSION SO THAT WE CAN WRITE TO IT LATER
+		call(["sudo", "touch", PATH_TO_COMPLETION_SCRIPT])
+		call(["sudo", "chmod", "777", PATH_TO_COMPLETION_SCRIPT])
+
+		with open(PATH_TO_COMPLETION_SCRIPT, 'w+') as handle:
+			handle.write(self.output)
 
 
-"""
-"""
+	def execute(self, input_file):
+		self.read(input_file)
+		self.write()
 
 autocomplete = AutoComplete()
-autocomplete.read('dumym')
-autocomplete.write()
+autocomplete.execute('dummy')
